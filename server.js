@@ -15,8 +15,8 @@ let otpStorage = {}; // Temporary storage for OTPs
 const transporter = nodemailer.createTransport({
   service: 'gmail',
   auth: {
-    user:'evidenceprotection5@gmail.com',
-    pass: 'ejgq tetf nlbp bkgw', // Replace with your App Password
+    user:'anomalyx04@gmail.com',
+    pass: 'gavc nqrf daph oprf', // Replace with your App Password
   },
 });
 

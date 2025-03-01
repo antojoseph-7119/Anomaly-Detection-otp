@@ -1,44 +1,89 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { ShieldCheck, Brain, Layers, Code, Download, KeyRound } from 'lucide-react';
 import './Welcome.css';
 import axios from 'axios';
+import { useNavigate } from "react-router-dom"; // ✅ Import useNavigate
 
 const WelcomePage = () => {
+  const navigate = useNavigate();
+
   const [email, setEmail] = useState('');
   const [otp, setOtp] = useState('');
   const [isOtpSent, setIsOtpSent] = useState(false);
   const [isVerified, setIsVerified] = useState(false);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [message, setMessage] = useState({ text: '', type: '' });
+
+  // Clear message after 5 seconds
+  useEffect(() => {
+    if (message.text) {
+      const timer = setTimeout(() => {
+        setMessage({ text: '', type: '' });
+      }, 5000);
+      return () => clearTimeout(timer);
+    }
+  }, [message]);
+
+  // Handle form submission feedback
+  const showMessage = (text, type) => {
+    setMessage({ text, type });
+  };
 
   // Send OTP to Email
   const handleEmailSubmit = async (e) => {
     e.preventDefault();
+    setLoading(true);
     try {
       await axios.post('http://localhost:5000/send-otp', { email });
-      alert('OTP sent to your email!');
+      showMessage('OTP sent to your email!', 'success');
       setIsOtpSent(true);
     } catch (error) {
-      alert('Error sending OTP');
+      showMessage('Error sending OTP. Please try again.', 'error');
+    } finally {
+      setLoading(false);
     }
   };
 
   // Verify OTP
   const handleOtpSubmit = async (e) => {
     e.preventDefault();
+    setLoading(true);
     try {
       const response = await axios.post('http://localhost:5000/verify-otp', { email, otp });
-      alert(response.data.message);
+      showMessage(response.data.message, 'success');
       setIsVerified(true);
-      setIsModalOpen(false); // Close modal after verification
+  
+      // Delay for success message, then navigate to dashboard
+      setTimeout(() => {
+        setIsModalOpen(false);
+        navigate('/dashboard'); // ✅ Redirect to Dashboard
+      }, 1500);
     } catch (error) {
-      alert('Invalid OTP. Please try again.');
+      showMessage('Invalid OTP. Please try again.', 'error');
+    } finally {
+      setLoading(false);
     }
   };
-
+  
   // Handle "Get Started" button click
   const handleGetStartedClick = (e) => {
     e.preventDefault();
     setIsModalOpen(true);
+  };
+
+  // Animated feature items with staggered reveal
+  const FeatureItem = ({ icon: Icon, title, description, delay }) => {
+    return (
+      <div 
+        className="feature-item"
+        style={{ animationDelay: `${delay}ms` }}
+      >
+        <Icon className="feature-icon" size={48} />
+        <h3 className="feature-title">{title}</h3>
+        <p className="feature-description">{description}</p>
+      </div>
+    );
   };
 
   return (
@@ -61,53 +106,47 @@ const WelcomePage = () => {
       <section className="key-features-section">
         <h2 className="section-title">Key Features</h2>
         <div className="features-grid">
-          <div className="feature-item">
-            <ShieldCheck className="feature-icon" size={48} />
-            <h3 className="feature-title">Proactive Threat Prevention</h3>
-            <p className="feature-description">
-              Identify and neutralize threats before they impact your network.
-            </p>
-          </div>
+          <FeatureItem
+            icon={ShieldCheck}
+            title="Proactive Threat Prevention"
+            description="Identify and neutralize threats before they impact your network."
+            delay={100}
+          />
 
-          <div className="feature-item">
-            <Brain className="feature-icon" size={48} />
-            <h3 className="feature-title">Intelligent Anomaly Detection</h3>
-            <p className="feature-description">
-              Leverage advanced AI algorithms to detect unusual network behavior.
-            </p>
-          </div>
+          <FeatureItem
+            icon={Brain}
+            title="Intelligent Anomaly Detection"
+            description="Leverage advanced AI algorithms to detect unusual network behavior."
+            delay={200}
+          />
 
-          <div className="feature-item">
-            <Layers className="feature-icon" size={48} />
-            <h3 className="feature-title">Seamless Integration</h3>
-            <p className="feature-description">
-              Easily integrate NetGuardian AI into your existing security infrastructure.
-            </p>
-          </div>
+          <FeatureItem
+            icon={Layers}
+            title="Seamless Integration"
+            description="Easily integrate NetGuardian AI into your existing security infrastructure."
+            delay={300}
+          />
 
-          <div className="feature-item">
-            <Code className="feature-icon" size={48} />
-            <h3 className="feature-title">Customizable Rules and Policies</h3>
-            <p className="feature-description">
-              Tailor the system to your specific network environment and security needs.
-            </p>
-          </div>
+          <FeatureItem
+            icon={Code}
+            title="Customizable Rules and Policies"
+            description="Tailor the system to your specific network environment and security needs."
+            delay={400}
+          />
 
-          <div className="feature-item">
-            <Download className="feature-icon" size={48} />
-            <h3 className="feature-title">Automated Reporting</h3>
-            <p className="feature-description">
-              Generate comprehensive reports to track security performance and compliance.
-            </p>
-          </div>
+          <FeatureItem
+            icon={Download}
+            title="Automated Reporting"
+            description="Generate comprehensive reports to track security performance and compliance."
+            delay={500}
+          />
 
-          <div className="feature-item">
-            <KeyRound className="feature-icon" size={48} />
-            <h3 className="feature-title">Secure Access Control</h3>
-            <p className="feature-description">
-              Ensure only authorized users have access to sensitive network resources.
-            </p>
-          </div>
+          <FeatureItem
+            icon={KeyRound}
+            title="Secure Access Control"
+            description="Ensure only authorized users have access to sensitive network resources."
+            delay={600}
+          />
         </div>
       </section>
 
@@ -128,6 +167,14 @@ const WelcomePage = () => {
         <div className="modal-overlay">
           <div className="modal-content">
             <h2 className="modal-title">Email Verification</h2>
+            
+            {/* Feedback message */}
+            {message.text && (
+              <div className={`message ${message.type}`}>
+                {message.text}
+              </div>
+            )}
+            
             {!isOtpSent ? (
               <form onSubmit={handleEmailSubmit} className="modal-form">
                 <label htmlFor="email" className="modal-label">Enter your email:</label>
@@ -137,10 +184,15 @@ const WelcomePage = () => {
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   className="modal-input"
+                  placeholder="your.email@example.com"
                   required
                 />
-                <button type="submit" className="modal-button">
-                  Send OTP
+                <button 
+                  type="submit" 
+                  className="modal-button" 
+                  disabled={loading}
+                >
+                  {loading ? 'Sending...' : 'Send OTP'}
                 </button>
               </form>
             ) : (
@@ -152,14 +204,23 @@ const WelcomePage = () => {
                   value={otp}
                   onChange={(e) => setOtp(e.target.value)}
                   className="modal-input"
+                  placeholder="Enter 6-digit code"
                   required
                 />
-                <button type="submit" className="modal-button">
-                  Verify OTP
+                <button 
+                  type="submit" 
+                  className="modal-button"
+                  disabled={loading}
+                >
+                  {loading ? 'Verifying...' : 'Verify OTP'}
                 </button>
               </form>
             )}
-            <button onClick={() => setIsModalOpen(false)} className="close-modal-button">
+            
+            <button 
+              onClick={() => setIsModalOpen(false)} 
+              className="close-modal-button"
+            >
               Close
             </button>
           </div>
